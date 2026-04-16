@@ -1,0 +1,27 @@
+{
+  "entities": {
+    "Booking": {
+      "title": "Booking",
+      "description": "A cab booking record",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string", "description": "ID of the user who made the booking" },
+        "bookingMode": { "type": "string", "enum": ["airport", "package"] },
+        "status": { "type": "string", "enum": ["completed", "upcoming", "cancelled"] },
+        "from": { "type": "string" },
+        "to": { "type": "string" },
+        "date": { "type": "string", "format": "date-time" },
+        "price": { "type": "number" },
+        "carType": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "bookingMode", "status", "createdAt"]
+    }
+  },
+  "firestore": {
+    "bookings/{bookingId}": {
+      "schema": { "$ref": "#/entities/Booking" },
+      "description": "Stores user bookings"
+    }
+  }
+}

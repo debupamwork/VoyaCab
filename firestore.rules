@@ -1,0 +1,67 @@
+rules_version = '2';
+
+// ===============================================================
+// Assumed Data Model
+// ===============================================================
+//
+// Collection: bookings
+// Document ID: auto-generated
+// Fields:
+//   - userId: string (required) - ID of the user who made the booking
+//   - bookingMode: string (required, 'airport' or 'package')
+//   - status: string (required, 'completed', 'upcoming', 'cancelled')
+//   - from: string (optional)
+//   - to: string (optional)
+//   - date: string (optional)
+//   - price: number (optional)
+//   - carType: string (optional)
+//   - createdAt: string (required)
+//
+// ===============================================================
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // ===============================================================
+    // Helper Functions
+    // ===============================================================
+    
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+    
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+    
+    function isValidBooking(data) {
+      return data.keys().hasAll(['userId', 'bookingMode', 'status', 'createdAt']) &&
+             data.userId is string &&
+             data.bookingMode in ['airport', 'package'] &&
+             data.status in ['completed', 'upcoming', 'cancelled'] &&
+             data.createdAt is string;
+    }
+
+    // ===============================================================
+    // Rules
+    // ===============================================================
+
+    match /bookings/{bookingId} {
+      // Users can read their own bookings
+      allow read: if isAuthenticated() && resource.data.userId == request.auth.uid;
+      
+      // Users can create bookings for themselves
+      allow create: if isAuthenticated() && 
+                    request.resource.data.userId == request.auth.uid &&
+                    isValidBooking(request.resource.data);
+                    
+      // Users can update their own bookings (e.g., to cancel)
+      allow update: if isAuthenticated() && 
+                    resource.data.userId == request.auth.uid &&
+                    request.resource.data.userId == request.auth.uid &&
+                    isValidBooking(request.resource.data);
+                    
+      allow delete: if false; // Soft deletes preferred via status='cancelled'
+    }
+  }
+}
